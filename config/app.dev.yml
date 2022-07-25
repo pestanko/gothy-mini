@@ -1,0 +1,7 @@
+server:
+  addr: localhost:8010
+
+
+data:
+  load:
+    - resources/data.dev.yml

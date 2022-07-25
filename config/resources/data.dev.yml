@@ -1,0 +1,56 @@
+---
+users:
+  - username: admin
+    email: email@example.com
+    name: Admin User
+    type: admin
+    credentials:
+      password: foobar_123
+      tokens:
+        - name: Admin api token  
+          value: some_testing_admin_api_token_11345678
+          scope: full
+  - username: system
+    email: system@localhost
+    name: System user
+    type: system
+
+  - username: testuser1
+    email: testuser1@example.com
+    name: Test User1
+    type: user
+    credentials:
+      password: foobar_123
+    
+
+## Clients
+clients:
+  - client_id: system 
+    name: Systme client
+    description: System client for internal use only
+    type: internal
+  
+  - client_id: test_oauth2
+    name: Testing oauth2 client
+    description: Testing OAuth 2.0 client
+    type: oauth2
+    auth_config:
+      client_type: confidential
+      flows:
+        - client_credentials
+        - authorization_code_grant
+        - resource_owner_password_credentials
+      client_secret: test_oauth2_client_secret
+      redirect_uris:
+        - https://127.0.0.1:8080/oauth2/callback
+      tokens:
+        access_token:
+          exipires_in: 360s
+        refresh_token:
+          single_use: true
+          exipires_in: 7d
+    scopes:
+      - test_scope:r
+      - test_scope2:w
+
+
