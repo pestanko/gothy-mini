@@ -17,8 +17,8 @@ const (
 	EnvStage = "stage"
 )
 
-// Application application configuration
-type Application struct {
+// AppCfg application configuration
+type AppCfg struct {
 	Server ServerConfig `yaml:"server"`
 	Data   DataConfig   `yaml:"data"`
 }
@@ -30,11 +30,11 @@ type ServerConfig struct {
 
 // DataConfig holds configuration information for which data files should be loaded
 type DataConfig struct {
-	Load []string `yaml:"load"`
+	Load string `yaml:"load"`
 }
 
 // LoadApplicationConfig for the spec. environment
-func LoadApplicationConfig(environment string) (app Application, err error) {
+func LoadApplicationConfig(environment string) (app AppCfg, err error) {
 	filepath := path.Join("config", fmt.Sprintf("app.%s.yml", environment))
 
 	if err = loadYamlFile(filepath, &app); err != nil {

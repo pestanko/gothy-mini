@@ -3,5 +3,4 @@ server:
 
 
 data:
-  load:
-    - resources/data.dev.yml
+  load: dev/data.dev.yml
