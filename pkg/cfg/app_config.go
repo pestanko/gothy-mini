@@ -35,7 +35,7 @@ type DataConfig struct {
 
 // LoadApplicationConfig for the spec. environment
 func LoadApplicationConfig(environment string) (app AppCfg, err error) {
-	filepath := path.Join("config", fmt.Sprintf("app.%s.yml", environment))
+	filepath := path.Join("config", environment, "app.yml")
 
 	if err = loadYamlFile(filepath, &app); err != nil {
 		return app, err

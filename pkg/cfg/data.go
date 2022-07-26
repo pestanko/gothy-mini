@@ -14,7 +14,7 @@ type DataTemplate struct {
 
 // LoadDataTemplate load all the data to the DataTemplate
 func LoadDataTemplate(config *AppCfg) (data DataTemplate, err error) {
-	filePath := path.Join("config", config.Data.Load)
+	filePath := path.Join("config", Vars.Env, config.Data.Load)
 	err = loadYamlFile(filePath, &data)
 	return
 }

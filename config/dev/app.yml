@@ -3,4 +3,4 @@ server:
 
 
 data:
-  load: dev/data.dev.yml
+  load: data.dev.yml
