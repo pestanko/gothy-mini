@@ -14,7 +14,7 @@ func HandleClientList(clientGetter client.Getter) func(w http.ResponseWriter, r 
 		if err != nil {
 			rest_utils.WriteErrResponse(w, http.StatusInternalServerError, err)
 		} else {
-			rest_utils.WriteJSONResponse(w, http.StatusOK, users)
+			rest_utils.WriteJSONResp(w, http.StatusOK, users)
 		}
 	}
 }
@@ -27,7 +27,7 @@ func HandleClientGet(clientGetter client.Getter) func(w http.ResponseWriter, r *
 		if err != nil {
 			rest_utils.WriteErrResponse(w, http.StatusInternalServerError, err)
 		} else {
-			rest_utils.WriteJSONResponse(w, http.StatusOK, result)
+			rest_utils.WriteJSONResp(w, http.StatusOK, result)
 		}
 	}
 }

@@ -8,7 +8,7 @@ import (
 // HandleAuthLoginApiToken handle standard user api token login
 func HandleAuthLoginApiToken() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rest_utils.WriteJSONResponse(w, http.StatusNotImplemented, statusDto{
+		rest_utils.WriteJSONResp(w, http.StatusNotImplemented, statusDto{
 			Status: "TODO",
 		})
 	}

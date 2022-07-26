@@ -6,6 +6,7 @@ import (
 	"github.com/pestanko/gothy-mini/pkg/cfg"
 	"github.com/pestanko/gothy-mini/pkg/client"
 	"github.com/pestanko/gothy-mini/pkg/rest/handler"
+	"github.com/pestanko/gothy-mini/pkg/security"
 	"github.com/pestanko/gothy-mini/pkg/user"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -17,6 +18,7 @@ type restServer struct {
 	data         cfg.DataTemplate
 	userGetter   user.Getter
 	clientGetter client.Getter
+	pwdHasher    security.PasswordHasher
 }
 
 func CreateResetServer(config cfg.AppCfg) http.Handler {
@@ -40,11 +42,13 @@ func makeWebServer(config *cfg.AppCfg) restServer {
 			Err(err).
 			Msg("unable to load data template")
 	}
+
 	return restServer{
 		config:       config,
 		data:         data,
 		userGetter:   user.NewGetter(data.Users),
 		clientGetter: client.NewGetter(data.Clients),
+		pwdHasher:    security.NewPasswordHasher(),
 	}
 }
 
@@ -94,7 +98,7 @@ func (s *restServer) registerRoutes(r *chi.Mux) {
 func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(middleware.NoCache)
-		r.Post("/login/credentials", handler.HandleAuthLoginCredentials())
+		r.Post("/login/credentials", handler.HandleAuthLoginCredentials(s.userGetter, s.pwdHasher))
 		r.Post("/login/token", handler.HandleAuthLoginApiToken())
 	})
 	r.Route("/oauth2", func(r chi.Router) {

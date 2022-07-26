@@ -8,7 +8,7 @@ import (
 // HandleHealth return OK status response if the application is ready
 func HandleHealth() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rest_utils.WriteJSONResponse(w, http.StatusOK, statusDto{
+		rest_utils.WriteJSONResp(w, http.StatusOK, statusDto{
 			Status: "success",
 		})
 	}
