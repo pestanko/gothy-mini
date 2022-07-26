@@ -5,7 +5,8 @@ users:
     name: Admin User
     type: admin
     credentials:
-      password: foobar_123
+      # password: foobar_123
+      password: $2a$14$ARw0H6VNqMQ5Whp8HaoefuWE.xjCdQ1rfVszILwJ3hgXRqF7L3ZVe
       tokens:
         - name: Admin api token  
           value: some_testing_admin_api_token_11345678
@@ -22,7 +23,8 @@ users:
     name: Test User1
     type: user
     credentials:
-      password: foobar_123
+      # password: foobar_123
+      password: $2a$14$ARw0H6VNqMQ5Whp8HaoefuWE.xjCdQ1rfVszILwJ3hgXRqF7L3ZVe
     
 
 ## Clients
