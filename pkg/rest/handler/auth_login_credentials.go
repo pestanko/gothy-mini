@@ -1,17 +1,21 @@
 package handler
 
 import (
+	"context"
 	"github.com/pestanko/gothy-mini/pkg/auth/login"
-	"github.com/pestanko/gothy-mini/pkg/rest/rest_utils"
+	"github.com/pestanko/gothy-mini/pkg/auth/session"
+	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"github.com/pestanko/gothy-mini/pkg/security"
 	"github.com/pestanko/gothy-mini/pkg/user"
 	"net/http"
+	"time"
 )
 
 // HandleAuthLoginCredentials handle standard credentials login
 func HandleAuthLoginCredentials(
 	getter user.Getter,
 	pwdHasher security.PasswordHasher,
+	sessionStore session.Store,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -20,22 +24,41 @@ func HandleAuthLoginCredentials(
 			Password string `json:"password"`
 		}
 
-		if e := rest_utils.ReadJSONBody(r, &credentialsDto); e != nil {
-			rest_utils.WriteErrorResp(w, e)
+		if e := restutl.ReadJSONBody(r, &credentialsDto); e != nil {
+			restutl.WriteErrorResp(w, e)
 			return
 		}
 
 		doLogin := login.DoPasswordLogin(getter, pwdHasher)
 		foundUser, err := doLogin(login.PasswordCredentials{
 			Username: credentialsDto.Username,
-			Password: credentialsDto.Username,
+			Password: credentialsDto.Password,
 		})
 
 		if err != nil {
-			rest_utils.WriteErrorResp(w, rest_utils.MkErrResp(http.StatusUnauthorized, "Invalid login"))
+			restutl.WriteErrorResp(w, restutl.MkErrResp(http.StatusUnauthorized, "Invalid login"))
 			return
 		}
 
-		rest_utils.WriteJSONResp(w, http.StatusOK, foundUser)
+		sess := session.MakeSession(foundUser)
+		if err := sessionStore.Store(context.Background(), sess); err != nil {
+			restutl.WriteErrResp(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		sendSessionCookie(w, sess)
+
+		restutl.WriteJSONResp(w, http.StatusOK, foundUser)
 	}
+}
+
+func sendSessionCookie(w http.ResponseWriter, sess session.Session) {
+	sessCookie := http.Cookie{
+		Name:     restutl.SessionIDKey,
+		Value:    sess.SessionID,
+		Path:     "/",
+		Expires:  time.Now().Add(8 * time.Hour),
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &sessCookie)
 }

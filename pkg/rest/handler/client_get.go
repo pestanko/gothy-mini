@@ -3,7 +3,7 @@ package handler
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/pestanko/gothy-mini/pkg/client"
-	"github.com/pestanko/gothy-mini/pkg/rest/rest_utils"
+	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"net/http"
 )
 
@@ -12,9 +12,9 @@ func HandleClientList(clientGetter client.Getter) func(w http.ResponseWriter, r 
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := clientGetter.GetAllClients()
 		if err != nil {
-			rest_utils.WriteErrResponse(w, http.StatusInternalServerError, err)
+			restutl.WriteErrResp(w, http.StatusInternalServerError, err)
 		} else {
-			rest_utils.WriteJSONResp(w, http.StatusOK, users)
+			restutl.WriteJSONResp(w, http.StatusOK, users)
 		}
 	}
 }
@@ -25,9 +25,9 @@ func HandleClientGet(clientGetter client.Getter) func(w http.ResponseWriter, r *
 		clientId := chi.URLParam(r, "clientId")
 		result, err := clientGetter.GetSingleClient(client.Query{ClientId: clientId})
 		if err != nil {
-			rest_utils.WriteErrResponse(w, http.StatusInternalServerError, err)
+			restutl.WriteErrResp(w, http.StatusInternalServerError, err)
 		} else {
-			rest_utils.WriteJSONResp(w, http.StatusOK, result)
+			restutl.WriteJSONResp(w, http.StatusOK, result)
 		}
 	}
 }

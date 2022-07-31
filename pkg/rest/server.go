@@ -1,11 +1,14 @@
 package rest
 
 import (
+	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/pestanko/gothy-mini/pkg/auth/session"
 	"github.com/pestanko/gothy-mini/pkg/cfg"
 	"github.com/pestanko/gothy-mini/pkg/client"
 	"github.com/pestanko/gothy-mini/pkg/rest/handler"
+	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"github.com/pestanko/gothy-mini/pkg/security"
 	"github.com/pestanko/gothy-mini/pkg/user"
 	"github.com/rs/zerolog/log"
@@ -19,6 +22,7 @@ type restServer struct {
 	userGetter   user.Getter
 	clientGetter client.Getter
 	pwdHasher    security.PasswordHasher
+	sessionStore session.Store
 }
 
 func CreateResetServer(config cfg.AppCfg) http.Handler {
@@ -49,6 +53,7 @@ func makeWebServer(config *cfg.AppCfg) restServer {
 		userGetter:   user.NewGetter(data.Users),
 		clientGetter: client.NewGetter(data.Clients),
 		pwdHasher:    security.NewPasswordHasher(),
+		sessionStore: session.NewStore(),
 	}
 }
 
@@ -98,18 +103,24 @@ func (s *restServer) registerRoutes(r *chi.Mux) {
 func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(middleware.NoCache)
-		r.Post("/login/credentials", handler.HandleAuthLoginCredentials(s.userGetter, s.pwdHasher))
+		r.Post("/login/credentials", handler.HandleAuthLoginCredentials(
+			s.userGetter,
+			s.pwdHasher,
+			s.sessionStore,
+		))
 		r.Post("/login/token", handler.HandleAuthLoginApiToken())
+		r.Get("/session/status", handler.HandleAuthSessionStatus(s.sessionStore))
 	})
 	r.Route("/oauth2", func(r chi.Router) {
 		r.Get("/authorize", handler.HandleOAuth2Authorize())
-		r.Post("/token", handler.HandleOAuth2Token())
+		r.Post("/token", handler.HandleOAuth2Token(s.userGetter))
 	})
 }
 
 func (s *restServer) registerApiUserRoutes(r chi.Router) {
 	r.Route("/users", func(r chi.Router) {
 		// TODO: require admin auth
+		r.Use(s.extractSession)
 		r.Get("/", handler.HandleUserList(s.userGetter))
 		r.Get("/{username}", handler.HandleUserGet(s.userGetter))
 	})
@@ -118,7 +129,20 @@ func (s *restServer) registerApiUserRoutes(r chi.Router) {
 func (s *restServer) registerApiClientRoutes(r chi.Router) {
 	r.Route("/clients", func(r chi.Router) {
 		// TODO: require admin auth
+		r.Use(s.extractSession)
 		r.Get("/", handler.HandleClientList(s.clientGetter))
 		r.Get("/{clientId}", handler.HandleClientGet(s.clientGetter))
 	})
+}
+
+func (s *restServer) extractSession(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		sess := restutl.RequireSession(w, r, s.sessionStore)
+		ctx = context.WithValue(ctx, restutl.SessionKey, sess)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+
+	return http.HandlerFunc(fn)
 }

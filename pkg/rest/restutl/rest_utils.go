@@ -1,4 +1,4 @@
-package rest_utils
+package restutl
 
 import (
 	"encoding/json"
@@ -27,8 +27,20 @@ func WriteErrorResp(w http.ResponseWriter, resp *ErrorResponse) {
 	WriteJSONResp(w, resp.Status, resp.Error)
 }
 
-// WriteErrResponse helper
-func WriteErrResponse(w http.ResponseWriter, code int, err error) {
+func RequiredParamMissing(w http.ResponseWriter, param string) {
+	WriteErrorResp(w, MkErrResp(http.StatusBadRequest, fmt.Sprintf("required paramter missing: %s", param)))
+}
+
+func InvalidParamM(w http.ResponseWriter, param string, value string) {
+	WriteErrorResp(w, MkErrResp(http.StatusBadRequest, fmt.Sprintf(
+		"invalid param \"%s\" with value: %s",
+		param,
+		value,
+	)))
+}
+
+// WriteErrResp helper
+func WriteErrResp(w http.ResponseWriter, code int, err error) {
 	WriteErrorResp(w, MkErrResp(code, fmt.Sprintf("%v", err)))
 }
 
