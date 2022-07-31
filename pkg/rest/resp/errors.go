@@ -44,12 +44,16 @@ func MkErrResp(status int, description string) ErrorResponse {
 		errorString = "server_error"
 	}
 
+	return MkErrorResp(status, ErrorDto{
+		Err:         errorString,
+		Description: description,
+	})
+}
+
+func MkErrorResp(status int, errDto ErrorDto) ErrorResponse {
 	return &ErrorResp{
 		StatusCode: status,
-		ErrDto: ErrorDto{
-			Err:         errorString,
-			Description: description,
-		},
+		ErrDto:     errDto,
 	}
 }
 

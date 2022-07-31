@@ -2,7 +2,7 @@ package client
 
 // Query to get a single client
 type Query struct {
-	ClientId string
+	ClientID string
 }
 
 // Getter interface with get method to get a user info

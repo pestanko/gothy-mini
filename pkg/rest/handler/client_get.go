@@ -24,7 +24,7 @@ func HandleClientList(clientGetter client.Getter) func(w http.ResponseWriter, r 
 func HandleClientGet(clientGetter client.Getter) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		clientId := chi.URLParam(r, "clientId")
-		result, err := clientGetter.GetSingleClient(client.Query{ClientId: clientId})
+		result, err := clientGetter.GetSingleClient(client.Query{ClientID: clientId})
 		if err != nil {
 			return resp.MkServerError(err)
 		}

@@ -15,7 +15,7 @@ type repoInMemory struct {
 
 func (r *repoInMemory) GetSingleClient(query Query) (*Client, error) {
 	for _, client := range r.getAll() {
-		if query.ClientId != "" && client.ClientId == query.ClientId {
+		if query.ClientID != "" && client.ClientId == query.ClientID {
 			return &client, nil
 		}
 	}

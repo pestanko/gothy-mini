@@ -18,7 +18,7 @@ type Client struct {
 	ClientId    string         `yaml:"client_id" json:"clientId"`
 	Name        string         `yaml:"name" json:"name"`
 	Description string         `yaml:"description" json:"description"`
-	Type        string         `yaml:"type" json:"type"`
+	Type        Type           `yaml:"type" json:"type"`
 	AuthConfig  Authentication `yaml:"auth_config" json:"authConfig"`
 }
 

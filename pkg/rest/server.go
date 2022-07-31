@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/pestanko/gothy-mini/pkg/auth/login"
+	"github.com/pestanko/gothy-mini/pkg/auth/oauth2"
 	"github.com/pestanko/gothy-mini/pkg/auth/session"
 	"github.com/pestanko/gothy-mini/pkg/cfg"
 	"github.com/pestanko/gothy-mini/pkg/client"
@@ -25,6 +27,7 @@ type restServer struct {
 	clientGetter client.Getter
 	pwdHasher    security.PasswordHasher
 	sessionStore session.Store
+	pwdLogin     func(credentials login.PasswordCredentials) (*user.User, error)
 }
 
 func CreateResetServer(config cfg.AppCfg) http.Handler {
@@ -49,13 +52,16 @@ func makeWebServer(config *cfg.AppCfg) restServer {
 			Msg("unable to load data template")
 	}
 
+	userGetter := user.NewGetter(data.Users)
+	pwdHasher := security.NewPasswordHasher()
 	return restServer{
 		config:       config,
 		data:         data,
-		userGetter:   user.NewGetter(data.Users),
+		userGetter:   userGetter,
 		clientGetter: client.NewGetter(data.Clients),
-		pwdHasher:    security.NewPasswordHasher(),
+		pwdHasher:    pwdHasher,
 		sessionStore: session.NewStore(),
+		pwdLogin:     login.DoPasswordLogin(userGetter, pwdHasher),
 	}
 }
 
@@ -117,7 +123,10 @@ func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 	r.Route("/oauth2", func(r chi.Router) {
 		r.Get("/authorize", restutl.WrapErrHandler(handler.HandleOAuth2Authorize()))
 		r.Post("/token", restutl.WrapErrHandler(handler.HandleOAuth2Token(
-			s.userGetter,
+			oauth2.ClientCredValidator(s.clientGetter),
+			oauth2.Flows{
+				ROPC: oauth2.NewROPCFlow(s.pwdLogin),
+			},
 		)))
 	})
 }

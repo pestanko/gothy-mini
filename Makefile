@@ -54,3 +54,9 @@ clean:
 ## run-serve: Run the server
 run-serve:
 	go run main.go serve
+
+.PHONY: gen-cert
+## gen-certs: generate RSA 4096 certificate
+gen-cert:
+	openssl genrsa -out cert/id_rsa 4096
+	openssl rsa -in cert/id_rsa -pubout -out cert/id_rsa.pub
