@@ -1,17 +1,15 @@
 package handler
 
 import (
-	"github.com/pestanko/gothy-mini/pkg/auth/session"
 	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"net/http"
 )
 
-func HandleAuthSessionStatus(
-	sessStore session.Store,
-) func(w http.ResponseWriter, r *http.Request) {
+func HandleAuthSessionStatus() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		sess := restutl.RequireSession(w, r, sessStore)
+		sess := restutl.GetSessionFromReq(r)
 		if sess == nil {
+			restutl.WriteErrorResp(w, restutl.MkErrResp(http.StatusUnauthorized, "no valid session found"))
 			return
 		}
 

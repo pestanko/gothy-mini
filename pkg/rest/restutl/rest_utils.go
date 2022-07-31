@@ -10,21 +10,25 @@ import (
 	"strings"
 )
 
-// ErrorDto Error JSON representation
+// ErrorDto Err JSON representation
 type ErrorDto struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
+	Err         string `json:"error"`
+	Description string `json:"error_description"`
+}
+
+func (e *ErrorDto) Error() string {
+	return fmt.Sprintf("error=\"%s\" error_description=\"%s\"", e.Err, e.Description)
 }
 
 // WriteErrorResp helper
 func WriteErrorResp(w http.ResponseWriter, resp *ErrorResponse) {
 	log.Warn().
-		Str("error", resp.Error.Error).
-		Str("error_desc", resp.Error.ErrorDescription).
+		Str("error", resp.ErrorDto.Err).
+		Str("error_desc", resp.ErrorDto.Description).
 		Int("status_code", resp.Status).
 		Msg("Returning the error response")
 
-	WriteJSONResp(w, resp.Status, resp.Error)
+	WriteJSONResp(w, resp.Status, resp.ErrorDto)
 }
 
 func RequiredParamMissing(w http.ResponseWriter, param string) {
@@ -51,10 +55,10 @@ func WriteJSONResp(w http.ResponseWriter, code int, resp interface{}) {
 
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		log.Error().Err(err).Msg("Error happened in JSON marshal")
+		log.Error().Err(err).Msg("ErrorDto happened in JSON marshal")
 	}
 	if _, err := w.Write(jsonResp); err != nil {
-		log.Error().Err(err).Msg("Error writing response")
+		log.Error().Err(err).Msg("ErrorDto writing response")
 	}
 }
 
@@ -125,7 +129,7 @@ func ReadJSONBody(r *http.Request, out interface{}) *ErrorResponse {
 			return MkErrResp(http.StatusRequestEntityTooLarge, msg)
 
 		// Otherwise default to logging the error and sending a 500 Internal
-		// Server Error response.
+		// Server ErrorDto response.
 		default:
 			return MkErrResp(http.StatusInternalServerError, "Oops something went wrong")
 		}

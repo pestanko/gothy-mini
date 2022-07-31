@@ -1,13 +1,18 @@
 package restutl
 
 import (
+	"fmt"
 	"net/http"
 )
 
 // ErrorResponse representation
 type ErrorResponse struct {
-	Status int
-	Error  ErrorDto
+	Status   int
+	ErrorDto ErrorDto
+}
+
+func (e *ErrorResponse) Error() string {
+	return fmt.Sprintf("status=%d %v", e.Status, e.ErrorDto)
 }
 
 func MkErrResp(status int, description string) *ErrorResponse {
@@ -26,9 +31,9 @@ func MkErrResp(status int, description string) *ErrorResponse {
 
 	return &ErrorResponse{
 		Status: status,
-		Error: ErrorDto{
-			Error:            errorString,
-			ErrorDescription: description,
+		ErrorDto: ErrorDto{
+			Err:         errorString,
+			Description: description,
 		},
 	}
 }

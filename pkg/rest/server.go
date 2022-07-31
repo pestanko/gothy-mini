@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type restServer struct {
@@ -94,6 +95,7 @@ func (s *restServer) registerRoutes(r *chi.Mux) {
 	})
 
 	r.Route("/api", func(r chi.Router) {
+		r.Use(s.sessionMiddleware)
 		s.registerApiAuthRoutes(r)
 		s.registerApiUserRoutes(r)
 		s.registerApiClientRoutes(r)
@@ -109,7 +111,7 @@ func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 			s.sessionStore,
 		))
 		r.Post("/login/token", handler.HandleAuthLoginApiToken())
-		r.Get("/session/status", handler.HandleAuthSessionStatus(s.sessionStore))
+		r.Get("/session/status", handler.HandleAuthSessionStatus())
 	})
 	r.Route("/oauth2", func(r chi.Router) {
 		r.Get("/authorize", handler.HandleOAuth2Authorize())
@@ -120,7 +122,6 @@ func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 func (s *restServer) registerApiUserRoutes(r chi.Router) {
 	r.Route("/users", func(r chi.Router) {
 		// TODO: require admin auth
-		r.Use(s.extractSession)
 		r.Get("/", handler.HandleUserList(s.userGetter))
 		r.Get("/{username}", handler.HandleUserGet(s.userGetter))
 	})
@@ -129,18 +130,22 @@ func (s *restServer) registerApiUserRoutes(r chi.Router) {
 func (s *restServer) registerApiClientRoutes(r chi.Router) {
 	r.Route("/clients", func(r chi.Router) {
 		// TODO: require admin auth
-		r.Use(s.extractSession)
 		r.Get("/", handler.HandleClientList(s.clientGetter))
 		r.Get("/{clientId}", handler.HandleClientGet(s.clientGetter))
 	})
 }
 
-func (s *restServer) extractSession(next http.Handler) http.Handler {
+func (s *restServer) sessionMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sess := restutl.RequireSession(w, r, s.sessionStore)
-		ctx = context.WithValue(ctx, restutl.SessionKey, sess)
+		sess, err := restutl.ExtractSessionFromReqCookie(r, s.sessionStore)
+		if err != nil {
+			log.Warn().Err(err).Msg("unable to get a session")
+		}
+		if err == nil && sess != nil && sess.IsValid(time.Now()) {
+			ctx = context.WithValue(ctx, restutl.SessionKey, sess)
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 
