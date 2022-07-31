@@ -8,6 +8,7 @@ import (
 	"github.com/pestanko/gothy-mini/pkg/cfg"
 	"github.com/pestanko/gothy-mini/pkg/client"
 	"github.com/pestanko/gothy-mini/pkg/rest/handler"
+	"github.com/pestanko/gothy-mini/pkg/rest/resp"
 	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"github.com/pestanko/gothy-mini/pkg/security"
 	"github.com/pestanko/gothy-mini/pkg/user"
@@ -105,33 +106,35 @@ func (s *restServer) registerRoutes(r *chi.Mux) {
 func (s *restServer) registerApiAuthRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(middleware.NoCache)
-		r.Post("/login/credentials", handler.HandleAuthLoginCredentials(
+		r.Post("/login/credentials", restutl.WrapErrHandler(handler.HandleAuthLoginCredentials(
 			s.userGetter,
 			s.pwdHasher,
 			s.sessionStore,
-		))
-		r.Post("/login/token", handler.HandleAuthLoginApiToken())
-		r.Get("/session/status", handler.HandleAuthSessionStatus())
+		)))
+		r.Post("/login/token", restutl.WrapErrHandler(handler.HandleAuthLoginApiToken()))
+		r.Get("/session/status", restutl.WrapErrHandler(handler.HandleAuthSessionStatus()))
 	})
 	r.Route("/oauth2", func(r chi.Router) {
-		r.Get("/authorize", handler.HandleOAuth2Authorize())
-		r.Post("/token", handler.HandleOAuth2Token(s.userGetter))
+		r.Get("/authorize", restutl.WrapErrHandler(handler.HandleOAuth2Authorize()))
+		r.Post("/token", restutl.WrapErrHandler(handler.HandleOAuth2Token(
+			s.userGetter,
+		)))
 	})
 }
 
 func (s *restServer) registerApiUserRoutes(r chi.Router) {
 	r.Route("/users", func(r chi.Router) {
-		// TODO: require admin auth
-		r.Get("/", handler.HandleUserList(s.userGetter))
-		r.Get("/{username}", handler.HandleUserGet(s.userGetter))
+		r.Use(s.checkAccess(requireAdmin))
+		r.Get("/", restutl.WrapErrHandler(handler.HandleUserList(s.userGetter)))
+		r.Get("/{username}", restutl.WrapErrHandler(handler.HandleUserGet(s.userGetter)))
 	})
 }
 
 func (s *restServer) registerApiClientRoutes(r chi.Router) {
 	r.Route("/clients", func(r chi.Router) {
-		// TODO: require admin auth
-		r.Get("/", handler.HandleClientList(s.clientGetter))
-		r.Get("/{clientId}", handler.HandleClientGet(s.clientGetter))
+		r.Use(s.checkAccess(requireAdmin))
+		r.Get("/", restutl.WrapErrHandler(handler.HandleClientList(s.clientGetter)))
+		r.Get("/{clientId}", restutl.WrapErrHandler(handler.HandleClientGet(s.clientGetter)))
 	})
 }
 
@@ -150,4 +153,29 @@ func (s *restServer) sessionMiddleware(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+func (s *restServer) checkAccess(
+	sessValidate func(sess *session.Session) bool,
+) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			sess := restutl.GetSessionFromReq(r)
+			if sess == nil {
+				restutl.WriteErrorResp(w, resp.MkUnauthorized())
+				return
+			}
+			if !sessValidate(sess) {
+				restutl.WriteErrorResp(w, resp.MkForbidden())
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
+func requireAdmin(sess *session.Session) bool {
+	return sess.UserType == user.TypeAdmin
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/pestanko/gothy-mini/pkg/auth/login"
 	"github.com/pestanko/gothy-mini/pkg/auth/session"
+	"github.com/pestanko/gothy-mini/pkg/rest/resp"
 	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
 	"github.com/pestanko/gothy-mini/pkg/security"
 	"github.com/pestanko/gothy-mini/pkg/user"
@@ -16,8 +17,8 @@ func HandleAuthLoginCredentials(
 	getter user.Getter,
 	pwdHasher security.PasswordHasher,
 	sessionStore session.Store,
-) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
 
 		var credentialsDto struct {
 			Username string `json:"username"`
@@ -25,8 +26,7 @@ func HandleAuthLoginCredentials(
 		}
 
 		if e := restutl.ReadJSONBody(r, &credentialsDto); e != nil {
-			restutl.WriteErrorResp(w, e)
-			return
+			return e
 		}
 
 		doLogin := login.DoPasswordLogin(getter, pwdHasher)
@@ -36,19 +36,18 @@ func HandleAuthLoginCredentials(
 		})
 
 		if err != nil {
-			restutl.WriteErrorResp(w, restutl.MkErrResp(http.StatusUnauthorized, "Invalid login"))
-			return
+			return resp.MkErrResp(http.StatusUnauthorized, "Invalid login")
 		}
 
 		sess := session.MakeSession(foundUser)
 		if err := sessionStore.Store(context.Background(), sess); err != nil {
-			restutl.WriteErrResp(w, http.StatusInternalServerError, err)
-			return
+			return err
 		}
 
 		sendSessionCookie(w, sess)
 
 		restutl.WriteJSONResp(w, http.StatusOK, foundUser)
+		return nil
 	}
 }
 

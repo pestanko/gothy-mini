@@ -1,15 +1,13 @@
 package handler
 
 import (
-	"github.com/pestanko/gothy-mini/pkg/rest/restutl"
+	"github.com/pestanko/gothy-mini/pkg/rest/resp"
 	"net/http"
 )
 
 // HandleAuthLoginApiToken handle standard user api token login
-func HandleAuthLoginApiToken() func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		restutl.WriteJSONResp(w, http.StatusNotImplemented, statusDto{
-			Status: "TODO",
-		})
+func HandleAuthLoginApiToken() func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return resp.MkErrResp(http.StatusNotImplemented, "TODO")
 	}
 }
